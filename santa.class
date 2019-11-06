@@ -1,0 +1,175 @@
+import java.io.*;
+import java.util.*;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.List;
+import java.io.FileReader;
+import java.util.Scanner;
+import java.util.logging.Logger;
+
+public class santa
+{
+  public static String readPath = "input\\";
+  public static String writePath = "output\\output.txt";
+  
+  public static void main(String[] args) throws Exception
+  {
+    
+    String filename = "no_file";
+    while (filename == "no_file")
+    {
+      filename = GetFilename(readPath);
+    }
+    
+    List<String> data = new ArrayList<String>();
+    
+    ReadProperties();
+    
+    readPath += filename;
+    
+    File f = new File(readPath);
+    
+    Thread.sleep(1); //задержка для ожидания завершения операции копирования файла
+    
+    InputStreamReader inputStreamReader = new InputStreamReader (new FileInputStream(f), "UTF-8");
+    BufferedReader reader = new BufferedReader(inputStreamReader);
+    
+    String s = reader.readLine();
+    data.add(FormattedString(s));
+    while (s != null)
+    {
+      s = reader.readLine();
+      if (s != null)
+      {
+        data.add(FormattedString(s));
+      }
+    }
+        
+    data = FormattedList(data);
+    
+    data = DeleteNumbers(data);
+    
+    CreateOutput(data, writePath);
+    
+    reader.close();
+    
+    DeleteInput(readPath);
+    
+    
+  }
+  
+  //пул входной папки
+  public static String GetFilename(String path)
+  {
+    File folder = new File(path);
+    
+    String[] files = folder.list(new FilenameFilter() {
+            @Override public boolean accept(File folder, String name) {
+                return name.endsWith(".txt");
+            }
+            
+        });
+    
+    if (files.length != 0)
+    {        
+      return files[0];
+    }
+      
+    else
+      return "no_file";
+  }
+  
+  
+  //удаление лишних пробелов в строке
+  public static String FormattedString(String str)
+  {
+    str = str.trim();
+    return str.replaceAll("[\\s]{2,}", " ");
+  }
+  
+  //сортировка списка для составления пар
+  public static List<String> FormattedList(List<String> lStr)
+  {
+    for (int i = 0; i != lStr.size() - 1; ++i)
+    {
+      String s1 = lStr.get(i).split(" ")[0];
+      String s2 = lStr.get(i + 1).split(" ")[0];
+      if (s1.matches("[-+]?\\d+") && s2.matches("[-+]?\\d+"))
+      {
+        if (Integer.parseInt(s1) == Integer.parseInt(s2))
+        {
+          System.out.println("YES");
+          if (i + 1 == lStr.size())
+          {
+            //если пара завершает список то последнего из списка поменять с первым
+            String t = lStr.get(lStr.size());
+            lStr.set(lStr.size(), lStr.get(0));
+            lStr.set(0, t);
+          }
+          else
+          {
+          
+            //если встречена пара подряд то передвинуть второго человека из пары вниз по списку
+            String t = lStr.get(i + 2);
+            lStr.set(i + 2, lStr.get(i + 1));
+            lStr.set(i + 1, t);
+           }
+         }
+      }
+      
+     }
+     return lStr;
+  }
+  
+  //удаление номеров перед фио пар
+  static public List<String> DeleteNumbers(List<String> lStr)
+  {
+    for (int i = 0; i != lStr.size(); ++i)
+    {
+      int k = 0;
+      String[] splitStr = lStr.get(i).split(" ");
+      if (splitStr[0].matches("[-+]?\\d+"))
+      {
+        lStr.set(i, "");
+        for (int j = 1; j != splitStr.length - 1; ++j)
+          lStr.set(i, lStr.get(i) + splitStr[j] + " ");
+        lStr.set(i, lStr.get(i) + splitStr[splitStr.length - 1]);
+      }
+    }
+    return lStr;
+  }
+  
+  //создание выходного файла
+  static public void CreateOutput(List<String> lStr, String path) throws Exception
+  {
+    try (BufferedWriter sr = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF8")))
+    {
+      for (int i = 0; i != lStr.size() - 1; ++i)
+        sr.write(lStr.get(i) + "->" + lStr.get(i + 1) + "\n");
+      sr.write(lStr.get(lStr.size() - 1) + "->" + lStr.get(0) + "\n");
+      sr.close();
+    }catch (UnsupportedEncodingException | FileNotFoundException ex) {System.out.println("error");}
+  }
+  
+  static public void DeleteInput(String path)
+  {
+    File f = new File(path);
+    f.delete();
+  }
+  
+  static public void ReadProperties() throws Exception
+  {
+    File f = new File("santa.properties");
+    if (!f.exists())
+      return;
+      
+    InputStreamReader inputStreamReader = new InputStreamReader (new FileInputStream(f), "UTF-8");
+    BufferedReader reader = new BufferedReader(inputStreamReader);
+    
+    readPath = reader.readLine();
+    writePath = reader.readLine();
+    
+    reader.close();
+  }
+}
